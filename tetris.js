@@ -42,7 +42,6 @@ function collide(arena, player) {
         // collision detected 
         // conditions -> cell has to be a '1' not '0' 
         // the row has to exist in the 'arena' and
-        console.log('collision~!')
         return true;
       }
 
@@ -119,15 +118,31 @@ function draw() {
   // Clear canvas before you draw anything new 
   clearCanvas();
 
+  const shadowPos = { 
+    x: player.pos.x, 
+    y: player.pos.y
+  };
+
+  // Move showd downward until it collides 
+  while (!collide(arena, {matrix: player.matrix, pos: shadowPos })) {
+    shadowPos.y++; 
+  }
+  shadowPos.y--;
+
+  // Draw the shadow tetromino with a diff color 
+  drawMatrix(player.matrix, shadowPos, "#888");
+
+  // Draw active tetromino
   drawMatrix(player.matrix, player.pos)
+
   drawMatrix(arena, {x: 0, y: 0}); //Draw the saved pieces on board 
 }
 
-function drawMatrix(matrix, offset) {
+function drawMatrix(matrix, offset, color = null) {
   matrix.forEach((row, y ) => {
     row.forEach((value, x) => {
       if (value !== 0){
-          context.fillStyle = colors[value];
+          context.fillStyle = color ? color: colors[value];
           context.fillRect(x + offset.x, y + offset.y, 1, 1);
       }
     });
@@ -165,6 +180,30 @@ function merge(arena, player) {
 
 // Rotation mechanics 
 function rotate(matrix, dir) {
+  // Special check for rotation with 'I' piece because its a 4x3 matrix
+  normal =[
+        [0, 5, 0],
+        [0, 5, 0],
+        [0, 5, 0], 
+        [0, 5, 0], 
+      ];
+  I_rotated = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0], 
+    [5, 5, 5, 5], 
+  ];
+  normal_check = JSON.stringify(normal);
+  I_rotated_check = JSON.stringify(I_rotated);
+  check_matrix = JSON.stringify(matrix);
+  if (check_matrix === normal_check) {
+    matrix = I_rotated;
+    return 
+  } else if (check_matrix === I_rotated_check) {
+    matrix = normal_check;
+    return 
+  }
+
   for (let y = 0; y < matrix.length; y++) {
     for (let x = 0; x < y; x++) {
       [ matrix[x][y], matrix[y][x]] = [ matrix[y][x], matrix[x][y]];
@@ -278,6 +317,7 @@ document.addEventListener('keydown', event => {
   }
   else if (event.key === 'ArrowUp') {
     playerRotate(1);
+    console.log('up')
   }
 })
 
