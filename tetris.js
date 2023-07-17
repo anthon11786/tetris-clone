@@ -322,6 +322,7 @@ const player = {
   pos: {x:0 , y:0 },
   matrix: null, 
   score: 0,
+  storedPiece: null, 
 }
 
 const colors = [ null,
@@ -336,7 +337,7 @@ const colors = [ null,
 
 // ################### KeyBoard Controls ###################
 document.addEventListener('keydown', event => {
-  // console.log(event)
+  console.log(event)
   if (event.key === 'ArrowLeft') {
     playerMove(-1);
   }
@@ -351,10 +352,21 @@ document.addEventListener('keydown', event => {
     playerRotate(1);
   } 
   else if (event.key === ' ') {
-    console.log('hard drop');
     playerHardDrop();
-    
   }
+  else if (event.key === 'c') {
+    if (player.storedPiece) {
+      temp = player.matrix;
+      player.matrix = player.storedPiece;  
+      player.storedPiece = temp; 
+  } else {
+      player.storedPiece = player.matrix; 
+      //  player.matrix = playerReset();  
+      // TODO - implement the store as a player reset so it moves the new piece to top
+      const pieces = 'TJLOSZI'; 
+      player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
+  }}
+    
 })
 
 
