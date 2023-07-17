@@ -123,12 +123,12 @@ function draw() {
     y: player.pos.y
   };
 
-  // Move showd downward until it collides 
-  while (!collide(arena, {matrix: player.matrix, pos: shadowPos })) {
-    shadowPos.y++; 
-  }
-  shadowPos.y--;
-
+  // // Move showd downward until it collides 
+  // while (!collide(arena, {matrix: player.matrix, pos: shadowPos })) {
+  //   shadowPos.y++; 
+  // }
+  // shadowPos.y--;
+  shadowPos.y = calculateShadow(shadowPos, arena)
   // Draw the shadow tetromino with a diff color 
   drawMatrix(player.matrix, shadowPos, "#888");
 
@@ -136,6 +136,15 @@ function draw() {
   drawMatrix(player.matrix, player.pos)
 
   drawMatrix(arena, {x: 0, y: 0}); //Draw the saved pieces on board 
+}
+
+function calculateShadow(shadowPos, arena) {
+    // Move showd downward until it collides 
+    while (!collide(arena, {matrix: player.matrix, pos: shadowPos })) {
+      shadowPos.y++; 
+    }
+    shadowPos.y--;
+    return shadowPos.y; 
 }
 
 function drawMatrix(matrix, offset, color = null) {
@@ -188,19 +197,20 @@ function rotate(matrix, dir) {
         [0, 5, 0], 
       ];
   I_rotated = [
+    [5, 5, 5, 5], 
     [0, 0, 0, 0],
     [0, 0, 0, 0],
     [0, 0, 0, 0], 
-    [5, 5, 5, 5], 
+    
   ];
   normal_check = JSON.stringify(normal);
   I_rotated_check = JSON.stringify(I_rotated);
   check_matrix = JSON.stringify(matrix);
   if (check_matrix === normal_check) {
-    matrix = I_rotated;
+    player.matrix = I_rotated;
     return 
   } else if (check_matrix === I_rotated_check) {
-    matrix = normal_check;
+    player.matrix = normal;
     return 
   }
 
@@ -227,6 +237,7 @@ function playerRotate(dir) {
     player.pos.x += offset; 
     offset = -(offset) + (offset > 0 ? 1: -1)
     if (offset > player.matrix[0].length) {
+      print('offst is greater than player matrix length')
       rotate(player.matrix, -dir);
       player.pos.x; 
       return; 
@@ -252,7 +263,27 @@ function playerReset() {
     player.score = 0; 
     updateScore(); 
   }
+}
 
+function playerHardDrop() {
+  const shadowPos = { 
+    x: player.pos.x, 
+    y: player.pos.y
+  };
+  player.pos.y = calculateShadow(shadowPos, arena);
+  // Below is same as playerDrop without the reset of drop counter so no delay 
+  // after hitting 'spacebar'
+  player.pos.y++;
+
+  if (collide(arena, player)) {
+    player.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
+    merge(arena, player); // save the tetrimino where it collided  
+    playerReset();
+    arenaSweep();
+    updateScore(); 
+  }
+
+  dropCounter = 0; // we dont want another drop we want that delay  
 
 }
 
@@ -290,7 +321,7 @@ const arena = createMatrix(12, 20);
 const player = {
   pos: {x:0 , y:0 },
   matrix: null, 
-  score: 0
+  score: 0,
 }
 
 const colors = [ null,
@@ -305,6 +336,7 @@ const colors = [ null,
 
 // ################### KeyBoard Controls ###################
 document.addEventListener('keydown', event => {
+  // console.log(event)
   if (event.key === 'ArrowLeft') {
     playerMove(-1);
   }
@@ -317,7 +349,11 @@ document.addEventListener('keydown', event => {
   }
   else if (event.key === 'ArrowUp') {
     playerRotate(1);
-    console.log('up')
+  } 
+  else if (event.key === ' ') {
+    console.log('hard drop');
+    playerHardDrop();
+    
   }
 })
 
