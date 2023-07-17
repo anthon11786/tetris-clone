@@ -1,8 +1,13 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 
-context.scale(20, 20); // Scales everything in the context 20x 
+const tetrominoStoreCanvas = document.getElementById('storedPiece');
+const storeContext = tetrominoStoreCanvas.getContext('2d');
 
+context.scale(20, 20); // Scales everything in the context 20x 
+storeContext.scale(20, 20);
+storeContext.fillStyle = '#000'
+storeContext.fillRect(0, 0, canvas.width, canvas.height)
 
 // Check if rows are completed 
 function arenaSweep() {
@@ -108,7 +113,7 @@ function createPiece(type) {
 
  
 
-function clearCanvas() {
+function clearCanvas(context) {
   context.fillStyle = '#000'
   context.fillRect(0, 0, canvas.width, canvas.height)
 }
@@ -116,7 +121,7 @@ function clearCanvas() {
 function draw() { 
   
   // Clear canvas before you draw anything new 
-  clearCanvas();
+  clearCanvas(context);
 
   const shadowPos = { 
     x: player.pos.x, 
@@ -134,6 +139,11 @@ function draw() {
 
   // Draw active tetromino
   drawMatrix(player.matrix, player.pos)
+
+  if (player.storedPiece) {
+    clearCanvas(storeContext);
+    drawMatrixStoredPiece(player.storedPiece)
+  }
 
   drawMatrix(arena, {x: 0, y: 0}); //Draw the saved pieces on board 
 }
@@ -153,6 +163,17 @@ function drawMatrix(matrix, offset, color = null) {
       if (value !== 0){
           context.fillStyle = color ? color: colors[value];
           context.fillRect(x + offset.x, y + offset.y, 1, 1);
+      }
+    });
+  });
+}
+
+function drawMatrixStoredPiece(matrix, color = null) {
+  matrix.forEach((row, y ) => {
+    row.forEach((value, x) => {
+      if (value !== 0){
+        storeContext.fillStyle = color ? color: colors[value];
+        storeContext.fillRect(x+1, y+1, 1, 1);
       }
     });
   });
@@ -338,34 +359,34 @@ const colors = [ null,
 // ################### KeyBoard Controls ###################
 document.addEventListener('keydown', event => {
   console.log(event)
-  if (event.key === 'ArrowLeft') {
-    playerMove(-1);
+  switch (event.key) {
+    case 'ArrowLeft':
+      playerMove(-1);
+      break;
+    case 'ArrowDown':
+      playerDrop();
+      break;
+    case 'ArrowRight':
+      playerMove(1);
+      break;
+    case 'ArrowUp':
+      playerRotate(1);
+      break;
+    case ' ':
+      playerHardDrop();
+      break;
+    case 'c':
+      if (player.storedPiece) {
+        temp = player.matrix;
+        player.matrix = player.storedPiece;
+        player.storedPiece = temp;
+      } else {
+        player.storedPiece = player.matrix;
+        const pieces = 'TJLOSZI';
+        player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
+      }
+      break;
   }
-  else if (event.key === 'ArrowDown'){
-    playerDrop()
-    
-  }
-  else if (event.key === 'ArrowRight') {
-    playerMove(1)
-  }
-  else if (event.key === 'ArrowUp') {
-    playerRotate(1);
-  } 
-  else if (event.key === ' ') {
-    playerHardDrop();
-  }
-  else if (event.key === 'c') {
-    if (player.storedPiece) {
-      temp = player.matrix;
-      player.matrix = player.storedPiece;  
-      player.storedPiece = temp; 
-  } else {
-      player.storedPiece = player.matrix; 
-      //  player.matrix = playerReset();  
-      // TODO - implement the store as a player reset so it moves the new piece to top
-      const pieces = 'TJLOSZI'; 
-      player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
-  }}
     
 })
 
