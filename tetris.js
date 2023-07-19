@@ -358,7 +358,7 @@ const player = {
   storedPiece: null, 
   direction: 0, // will hold -1 for left, 0 for none, 1 for right
   holdingTime: 0, // will hold the time in milliseconds a move key has been held down
-  fastMoveInterval: 150, // after 200ms of holding, we speed up
+  fastMoveInterval: 150, // after 150ms of holding, we speed up
 }
 
 const colors = [ null,
@@ -425,3 +425,13 @@ document.addEventListener('keyup', event => {
 playerReset(); 
 updateScore(); 
 update();
+
+
+// TODO 
+// #1 Fix StoreCanvas clear (not clearing!)
+// #2 BIG - stored something while touching the wall and it stops there 
+// --- Against the wall bringin in a p iece that would push it out of the wall and makes it saved. 
+// #2 Fix the spin thing when a piece is blocked 
+// #3 add the number of lines tracked 
+// #4 add the preview of the next pieces 
+// #5 
