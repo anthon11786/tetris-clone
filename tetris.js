@@ -358,7 +358,7 @@ const player = {
   storedPiece: null, 
   direction: 0, // will hold -1 for left, 0 for none, 1 for right
   holdingTime: 0, // will hold the time in milliseconds a move key has been held down
-  fastMoveInterval: 175, // after 200ms of holding, we speed up
+  fastMoveInterval: 150, // after 200ms of holding, we speed up
 }
 
 const colors = [ null,
