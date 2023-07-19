@@ -7,7 +7,10 @@ const storeContext = tetrominoStoreCanvas.getContext('2d');
 context.scale(20, 20); // Scales everything in the context 20x 
 storeContext.scale(20, 20);
 storeContext.fillStyle = '#000'
-storeContext.fillRect(0, 0, canvas.width, canvas.height)
+storeContext.fillRect(0, 0, context.width, context.height)
+storeContext.strokeStyle = 'black'; // Grid line color
+storeContext.lineWidth = 0.05; // Grid line width
+
 
 // Check if rows are completed 
 function arenaSweep() {
@@ -40,10 +43,14 @@ const matrix = [
 
 function collide(arena, player) {
   const [matrix, offset] = [player.matrix, player.pos]; 
+
   // iterating over the player 
   for (let y = 0; y < matrix.length; ++y) {
     for (let x = 0; x < matrix[y].length; ++x) {
-      if (matrix[y][x] !== 0 && (arena[y + offset.y] && arena[y + offset.y][x + offset.x]) !== 0 ){
+      if (matrix[y][x] !== 0 &&
+         (offset.y + y < arena.length &&
+          offset.x + x < arena[offset.y + y].length &&
+          arena[offset.y + y][offset.x + x]) !== 0)  {
         // collision detected 
         // conditions -> cell has to be a '1' not '0' 
         // the row has to exist in the 'arena' and
@@ -91,10 +98,10 @@ function createPiece(type) {
       ]
   } else if (type === 'I'){
       return [
-        [0, 5, 0],
-        [0, 5, 0],
-        [0, 5, 0], 
-        [0, 5, 0], 
+        [0, 5, 0, 0],
+        [0, 5, 0, 0],
+        [0, 5, 0, 0], 
+        [0, 5, 0, 0], 
       ]
   } else if (type === 'S') {
       return [
@@ -113,15 +120,23 @@ function createPiece(type) {
 
  
 
-function clearCanvas(context) {
+function clearCanvas(context, width, height) {
   context.fillStyle = '#000'
-  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.fillRect(0, 0, width, height)
+  context.strokeStyle = '#888'; // Grid line color
+  context.lineWidth = 0.05; // Grid line width
+
+  for(let i=0; i<width; i++) {
+    for(let j=0; j<height; j++) {
+      context.strokeRect(i, j, 1, 1); // Draw the grid line
+    }
+  }
 }
 
 function draw() { 
   
   // Clear canvas before you draw anything new 
-  clearCanvas(context);
+  clearCanvas(context, canvas.width/20, canvas.height/20);
 
   const shadowPos = { 
     x: player.pos.x, 
@@ -141,7 +156,7 @@ function draw() {
   drawMatrix(player.matrix, player.pos)
 
   if (player.storedPiece) {
-    clearCanvas(storeContext);
+    clearCanvas(storeContext, storeContext.width/20, storeContext.height/20);
     drawMatrixStoredPiece(player.storedPiece)
   }
 
@@ -163,6 +178,9 @@ function drawMatrix(matrix, offset, color = null) {
       if (value !== 0){
           context.fillStyle = color ? color: colors[value];
           context.fillRect(x + offset.x, y + offset.y, 1, 1);
+          context.strokeStyle = 'black'; // Grid line color
+          context.lineWidth = 0.05; // Grid line width
+          context.strokeRect(x + offset.x, y + offset.y, 1, 1); // Draw the grid line
       }
     });
   });
@@ -174,6 +192,9 @@ function drawMatrixStoredPiece(matrix, color = null) {
       if (value !== 0){
         storeContext.fillStyle = color ? color: colors[value];
         storeContext.fillRect(x+1, y+1, 1, 1);
+        storeContext.strokeStyle = 'black'; // Grid line color
+        storeContext.lineWidth = 0.05; // Grid line width
+        storeContext.strokeRect(x+1, y+1, 1, 1); // Draw the grid line
       }
     });
   });
@@ -211,29 +232,6 @@ function merge(arena, player) {
 // Rotation mechanics 
 function rotate(matrix, dir) {
   // Special check for rotation with 'I' piece because its a 4x3 matrix
-  normal =[
-        [0, 5, 0],
-        [0, 5, 0],
-        [0, 5, 0], 
-        [0, 5, 0], 
-      ];
-  I_rotated = [
-    [5, 5, 5, 5], 
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0], 
-    
-  ];
-  normal_check = JSON.stringify(normal);
-  I_rotated_check = JSON.stringify(I_rotated);
-  check_matrix = JSON.stringify(matrix);
-  if (check_matrix === normal_check) {
-    player.matrix = I_rotated;
-    return 
-  } else if (check_matrix === I_rotated_check) {
-    player.matrix = normal;
-    return 
-  }
 
   for (let y = 0; y < matrix.length; y++) {
     for (let x = 0; x < y; x++) {
@@ -242,8 +240,13 @@ function rotate(matrix, dir) {
 
     }
   }
+  // Reverse the order of columns for clockwise rotation
   if (dir > 0) {
-    matrix.forEach(row => row.reverse())
+    matrix.forEach(row => row.reverse());
+  }
+  // Reverse the order of rows for counter-clockwise rotation
+  else {
+    matrix.reverse();
   }
 }
 
@@ -320,6 +323,15 @@ function update(time = 0) {
   const deltaTime = time - lastTime;
   lastTime = time;
   
+  // For delay in holding button down
+  if (player.direction !== 0) {
+    player.holdingTime += deltaTime;
+    if (player.holdingTime >= player.fastMoveInterval) {
+      playerMove(player.direction);
+      player.holdingTime -= player.fastMoveInterval;
+    }
+  }
+
   dropCounter += deltaTime; 
   if (dropCounter > dropInterval) {
     playerDrop(); 
@@ -344,6 +356,9 @@ const player = {
   matrix: null, 
   score: 0,
   storedPiece: null, 
+  direction: 0, // will hold -1 for left, 0 for none, 1 for right
+  holdingTime: 0, // will hold the time in milliseconds a move key has been held down
+  fastMoveInterval: 175, // after 200ms of holding, we speed up
 }
 
 const colors = [ null,
@@ -356,18 +371,24 @@ const colors = [ null,
   '#3877FF',
 ];
 
+
+
 // ################### KeyBoard Controls ###################
 document.addEventListener('keydown', event => {
-  console.log(event)
+  
   switch (event.key) {
     case 'ArrowLeft':
       playerMove(-1);
-      break;
-    case 'ArrowDown':
-      playerDrop();
+      player.direction = -1;
+      player.holdingTime = 0;
       break;
     case 'ArrowRight':
       playerMove(1);
+      player.direction = 1;
+      player.holdingTime = 0;
+      break;
+    case 'ArrowDown':
+      playerDrop();
       break;
     case 'ArrowUp':
       playerRotate(1);
@@ -388,6 +409,15 @@ document.addEventListener('keydown', event => {
       break;
   }
     
+})
+
+document.addEventListener('keyup', event => {
+  switch (event.key) {
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      player.direction = 0;
+      break;
+  }
 })
 
 
