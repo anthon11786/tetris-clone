@@ -252,25 +252,35 @@ function rotate(matrix, dir) {
   }
 }
 
+/**
+ * Rotates the player piece in the specified direction,
+ * and adjusts the position of the piece to avoid collisions
+ * with the arena boundaries or other pieces. If no valid
+ * position is found after the rotation, the rotation is undone.
+ *
+ * @param {number} dir - The direction of rotation. Typically, a value of 1 indicates
+ * clockwise rotation, and -1 indicates counter-clockwise rotation.
+ */
 function playerRotate(dir) {
-  const pos = player.pos.x;
-  let offset = 1; 
+  const posX = player.pos.x;
+  const posY = player.pos.y;
+  let offset = 1;
 
-  rotate(player.matrix, dir)
-  let moved = false; // to check if the piece could be moved
+  // Rotate the player's piece
+  rotate(player.matrix, dir);
+
+  // Check for collisions and adjust the player's position to avoid them
   while (collide(arena, player)) {
     player.pos.x += offset;
-    offset = -(offset) + (offset > 0 ? 1 : -1);
+    player.pos.y += offset;
+    offset = -(offset + (offset > 0 ? 1: -1));
+
+    // If no valid position is found after rotation, undo the rotation
     if (offset > player.matrix[0].length) {
-      if (!moved) { // If the piece could not be moved after rotation
-        rotate(player.matrix, -dir); // rotate it back
-        player.pos.x = pos;
-        return;
-      }
-      offset = 1; // reset offset
-      moved = false; // reset moved flag
-    } else {
-      moved = true; // set moved flag to true
+      rotate(player.matrix, -dir);
+      player.pos.x = posX;
+      player.pos.y = posY;
+      return;
     }
   }
 }
