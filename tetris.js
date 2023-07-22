@@ -7,9 +7,16 @@ const storeContext = tetrominoStoreCanvas.getContext('2d');
 context.scale(20, 20); // Scales everything in the context 20x 
 storeContext.scale(20, 20);
 storeContext.fillStyle = '#000'
-storeContext.fillRect(0, 0, context.width, context.height)
-storeContext.strokeStyle = 'black'; // Grid line color
+storeContext.fillRect(0, 0, tetrominoStoreCanvas.width/20, tetrominoStoreCanvas.height/20);
+storeContext.strokeStyle = '#888'; // Grid line color
 storeContext.lineWidth = 0.05; // Grid line width
+
+// Start storedCanvas with grid lines 
+for(let i=0; i<tetrominoStoreCanvas.width/20; i++) {
+  for(let j=0; j<tetrominoStoreCanvas.height/20; j++) {
+    storeContext.strokeRect(i, j, 1, 1); // Draw the grid line
+  }
+}
 
 
 // Check if rows are completed 
@@ -27,8 +34,8 @@ function arenaSweep() {
     arena.unshift(row); // append empty row to the top
     y++; 
     
-    player.score += rowCount*10; 
-    rowCount *= 2; 
+    player.score += rowCount; 
+    // rowCount *= 2; 
   }
 }
 
@@ -143,11 +150,6 @@ function draw() {
     y: player.pos.y
   };
 
-  // // Move showd downward until it collides 
-  // while (!collide(arena, {matrix: player.matrix, pos: shadowPos })) {
-  //   shadowPos.y++; 
-  // }
-  // shadowPos.y--;
   shadowPos.y = calculateShadow(shadowPos, arena)
   // Draw the shadow tetromino with a diff color 
   drawMatrix(player.matrix, shadowPos, "#888");
@@ -156,7 +158,8 @@ function draw() {
   drawMatrix(player.matrix, player.pos)
 
   if (player.storedPiece) {
-    clearCanvas(storeContext, storeContext.width/20, storeContext.height/20);
+    clearCanvas(storeContext, tetrominoStoreCanvas.width/20, tetrominoStoreCanvas.height/20);
+    // Do some collision detection 
     drawMatrixStoredPiece(player.storedPiece)
   }
 
@@ -231,7 +234,6 @@ function merge(arena, player) {
 
 // Rotation mechanics 
 function rotate(matrix, dir) {
-  // Special check for rotation with 'I' piece because its a 4x3 matrix
 
   for (let y = 0; y < matrix.length; y++) {
     for (let x = 0; x < y; x++) {
@@ -255,18 +257,21 @@ function playerRotate(dir) {
   let offset = 1; 
 
   rotate(player.matrix, dir)
+  let moved = false; // to check if the piece could be moved
   while (collide(arena, player)) {
-    // move piece left and right checking its clear 
-    // if collide move player offset 
-    player.pos.x += offset; 
-    offset = -(offset) + (offset > 0 ? 1: -1)
+    player.pos.x += offset;
+    offset = -(offset) + (offset > 0 ? 1 : -1);
     if (offset > player.matrix[0].length) {
-      print('offst is greater than player matrix length')
-      rotate(player.matrix, -dir);
-      player.pos.x; 
-      return; 
+      if (!moved) { // If the piece could not be moved after rotation
+        rotate(player.matrix, -dir); // rotate it back
+        player.pos.x = pos;
+        return;
+      }
+      offset = 1; // reset offset
+      moved = false; // reset moved flag
+    } else {
+      moved = true; // set moved flag to true
     }
-
   }
 }
 
@@ -285,6 +290,8 @@ function playerReset() {
   if (collide(arena, player)) { 
     arena.forEach(row => row.fill(0))
     player.score = 0; 
+    player.storedPiece = null; 
+    clearCanvas(storeContext, tetrominoStoreCanvas.width/20, tetrominoStoreCanvas.height/20);
     updateScore(); 
   }
 }
@@ -358,7 +365,7 @@ const player = {
   storedPiece: null, 
   direction: 0, // will hold -1 for left, 0 for none, 1 for right
   holdingTime: 0, // will hold the time in milliseconds a move key has been held down
-  fastMoveInterval: 150, // after 150ms of holding, we speed up
+  fastMoveInterval: 120, // after 150ms of holding, we speed up
 }
 
 const colors = [ null,
@@ -401,6 +408,14 @@ document.addEventListener('keydown', event => {
         temp = player.matrix;
         player.matrix = player.storedPiece;
         player.storedPiece = temp;
+        // Check if the newly swapped piece is in a valid position
+        if (collide(arena, player)) {
+          // If not, swap back
+          temp = player.matrix;
+          player.matrix = player.storedPiece;
+          player.storedPiece = temp;
+        }
+        clearCanvas(storeContext , tetrominoStoreCanvas.width/20, tetrominoStoreCanvas.height/20);
       } else {
         player.storedPiece = player.matrix;
         const pieces = 'TJLOSZI';
@@ -428,10 +443,6 @@ update();
 
 
 // TODO 
-// #1 Fix StoreCanvas clear (not clearing!)
-// #2 BIG - stored something while touching the wall and it stops there 
-// --- Against the wall bringin in a p iece that would push it out of the wall and makes it saved. 
 // #2 Fix the spin thing when a piece is blocked 
 // #3 add the number of lines tracked 
 // #4 add the preview of the next pieces 
-// #5 
