@@ -36,7 +36,7 @@ class Player {
         let offset = 1;
     
         // Rotate the player's piece
-        rotate(this.matrix, dir);
+        this._rotateMatrix(this.matrix, dir);
     
         // Check for collisions and adjust the player's position to avoid them
         while (collide(arena, this)) {
@@ -46,11 +46,29 @@ class Player {
     
             // If no valid position is found after rotation, undo the rotation
             if (offset > this.matrix[0].length) {
-                rotate(this.matrix, -dir);
+                this._rotateMatrix(this.matrix, -dir);
                 this.pos.x = posX;
                 this.pos.y = posY;
                 return;
             }
+        }
+    }
+
+    // Matrix rotation mechanics 
+    _rotateMatrix(matrix, dir) {
+
+        for (let y = 0; y < matrix.length; y++) {
+            for (let x = 0; x < y; x++) {
+                [ matrix[x][y], matrix[y][x]] = [ matrix[y][x], matrix[x][y]];
+            }
+        }
+        // Reverse the order of columns for clockwise rotation
+        if (dir > 0) {
+            matrix.forEach(row => row.reverse());
+        }
+        // Reverse the order of rows for counter-clockwise rotation
+        else {
+                matrix.reverse();
         }
     }
 
@@ -62,8 +80,8 @@ class Player {
       
         if (collide(arena, this)) {
             this.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
-            merge(arena, this); // save the tetrimino where it collided  
-            playerReset();
+            merge(arena.matrix, this); // save the tetrimino where it collided  
+            this.reset();
             arenaSweep();
             updateScore(); 
         }
@@ -75,9 +93,9 @@ class Player {
         const pieces = 'TJLOSZI'; 
         this.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
         this.pos.y = 0; 
-        this.pos.x = (arena[0].length / 2 | 0) - (this.matrix[0].length / 2 | 0); 
+        this.pos.x = (arena.matrix[0].length / 2 | 0) - (this.matrix[0].length / 2 | 0); 
         if (collide(arena, this)) { 
-            arena.forEach(row => row.fill(0))
+            arena.clear();
             this.score = 0; 
             this.storedPiece = null; 
             clearCanvas(storeContext, tetrominoStoreCanvas.width/20, tetrominoStoreCanvas.height/20);

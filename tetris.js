@@ -19,27 +19,6 @@ for(let i=0; i<tetrominoStoreCanvas.width/20; i++) {
 }
 
 
-// Check if rows are completed 
-function arenaSweep() {
-  let rowCount = 1; 
-  outer: for (let y = arena.length -1; y > 0; y--) {
-    for (let x = 0; x < arena[y].length; ++x) {
-      // Check if any of rows have a zero, if it does not fully complete then
-      if (arena[y][x] === 0) {
-        continue outer; 
-      }
-
-    }
-    const row = arena.splice(y, 1)[0].fill(0); // takes rows out of arena, and fills it with 0 
-    arena.unshift(row); // append empty row to the top
-    y++; 
-    
-    player.score += rowCount; 
-    // rowCount *= 2; 
-  }
-}
-
-
 // Data structures for tetrinemos 
 const matrix = [
   [0, 0, 0],
@@ -55,9 +34,9 @@ function collide(arena, player) {
   for (let y = 0; y < matrix.length; ++y) {
     for (let x = 0; x < matrix[y].length; ++x) {
       if (matrix[y][x] !== 0 &&
-         (offset.y + y < arena.length &&
-          offset.x + x < arena[offset.y + y].length &&
-          arena[offset.y + y][offset.x + x]) !== 0)  {
+         (offset.y + y < arena.matrix.length &&
+          offset.x + x < arena.matrix[offset.y + y].length &&
+          arena.matrix[offset.y + y][offset.x + x]) !== 0)  {
         // collision detected 
         // conditions -> cell has to be a '1' not '0' 
         // the row has to exist in the 'arena' and
@@ -69,14 +48,6 @@ function collide(arena, player) {
   return false; 
 }
 
-function createMatrix(width, height){
-  const matrix = [];
-
-  while (height--) {
-    matrix.push(new Array(width).fill(0));
-  }
-  return matrix;
-}
 
 // 
 function createPiece(type) {
@@ -163,11 +134,11 @@ function draw() {
     drawMatrixStoredPiece(player.storedPiece)
   }
 
-  drawMatrix(arena, {x: 0, y: 0}); //Draw the saved pieces on board 
+  drawMatrix(arena.matrix, {x: 0, y: 0}); //Draw the saved pieces on board 
 }
 
 function calculateShadow(shadowPos, arena) {
-    // Move showd downward until it collides 
+    // Move shadow downward until it collides 
     while (!collide(arena, {matrix: player.matrix, pos: shadowPos })) {
       shadowPos.y++; 
     }
@@ -205,36 +176,17 @@ function drawMatrixStoredPiece(matrix, color = null) {
 
 
 // Saves the current spot of the tetrimino into the gameboard 
-function merge(arena, player) {
+function merge(matrix, player) {
   player.matrix.forEach((row, y) => {
     row.forEach((value, x) => {
       if (value !== 0) {
-        arena[y + player.pos.y][x + player.pos.x] = value;
+        arena.matrix[y + player.pos.y][x + player.pos.x] = value;
       }
     })
   })
 }
 
 
-// Rotation mechanics 
-function rotate(matrix, dir) {
-
-  for (let y = 0; y < matrix.length; y++) {
-    for (let x = 0; x < y; x++) {
-      [ matrix[x][y], matrix[y][x]] = [ matrix[y][x], matrix[x][y]];
-      
-
-    }
-  }
-  // Reverse the order of columns for clockwise rotation
-  if (dir > 0) {
-    matrix.forEach(row => row.reverse());
-  }
-  // Reverse the order of rows for counter-clockwise rotation
-  else {
-    matrix.reverse();
-  }
-}
 
 
 function playerHardDrop() {
@@ -246,12 +198,11 @@ function playerHardDrop() {
   // Below is same as player.drop() without the reset of drop counter so no delay 
   // after hitting 'spacebar'
   player.pos.y++;
-
   if (collide(arena, player)) {
     player.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
-    merge(arena, player); // save the tetrimino where it collided  
+    merge(arena.matrix, player); // save the tetrimino where it collided  
     player.reset();
-    arenaSweep();
+    arena.sweep();
     updateScore(); 
   }
 
@@ -295,7 +246,7 @@ function updateScore() {
 }
 
 // #########################################################
-const arena = createMatrix(12, 20);
+const arena = new Arena(12, 20);
 
 const player = new Player; 
 
@@ -332,7 +283,7 @@ document.addEventListener('keydown', event => {
       player.rotate(1);
       break;
     case ' ':
-      playerHardDrop();
+      playerHardDrop();``
       break;
     case 'c':
       if (player.storedPiece) {
