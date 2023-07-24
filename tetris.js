@@ -203,19 +203,7 @@ function drawMatrixStoredPiece(matrix, color = null) {
   });
 }
 
-function playerDrop() {
-  player.pos.y++;
 
-  if (collide(arena, player)) {
-    player.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
-    merge(arena, player); // save the tetrimino where it collided  
-    playerReset();
-    arenaSweep();
-    updateScore(); 
-  }
-
-  dropCounter = 0; // we dont want another drop we want that delay  
-}
 
 
 // Saves the current spot of the tetrimino into the gameboard 
@@ -252,45 +240,6 @@ function rotate(matrix, dir) {
   }
 }
 
-/**
- * Rotates the player piece in the specified direction,
- * and adjusts the position of the piece to avoid collisions
- * with the arena boundaries or other pieces. If no valid
- * position is found after the rotation, the rotation is undone.
- *
- * @param {number} dir - The direction of rotation. Typically, a value of 1 indicates
- * clockwise rotation, and -1 indicates counter-clockwise rotation.
- */
-function playerRotate(dir) {
-  const posX = player.pos.x;
-  const posY = player.pos.y;
-  let offset = 1;
-
-  // Rotate the player's piece
-  rotate(player.matrix, dir);
-
-  // Check for collisions and adjust the player's position to avoid them
-  while (collide(arena, player)) {
-    player.pos.x += offset;
-    player.pos.y += offset;
-    offset = -(offset + (offset > 0 ? 1: -1));
-
-    // If no valid position is found after rotation, undo the rotation
-    if (offset > player.matrix[0].length) {
-      rotate(player.matrix, -dir);
-      player.pos.x = posX;
-      player.pos.y = posY;
-      return;
-    }
-  }
-}
-
-function playerMove(dir) {
-  player.pos.x += dir; 
-  if (collide(arena, player)) { 
-    player.pos.x -= dir; 
-  }
-}
 
 function playerReset() {
   const pieces = 'TJLOSZI'; 
@@ -312,7 +261,7 @@ function playerHardDrop() {
     y: player.pos.y
   };
   player.pos.y = calculateShadow(shadowPos, arena);
-  // Below is same as playerDrop without the reset of drop counter so no delay 
+  // Below is same as player.drop() without the reset of drop counter so no delay 
   // after hitting 'spacebar'
   player.pos.y++;
 
@@ -344,14 +293,14 @@ function update(time = 0) {
   if (player.direction !== 0) {
     player.holdingTime += deltaTime;
     if (player.holdingTime >= player.fastMoveInterval) {
-      playerMove(player.direction);
+      player.move(player.direction);
       player.holdingTime -= player.fastMoveInterval;
     }
   }
 
   dropCounter += deltaTime; 
   if (dropCounter > dropInterval) {
-    playerDrop(); 
+    player.drop(); 
   }
 
   draw(); 
@@ -387,20 +336,20 @@ document.addEventListener('keydown', event => {
   
   switch (event.key) {
     case 'ArrowLeft':
-      playerMove(-1);
+      player.move(-1);
       player.direction = -1;
       player.holdingTime = 0;
       break;
     case 'ArrowRight':
-      playerMove(1);
+      player.move(1);
       player.direction = 1;
       player.holdingTime = 0;
       break;
     case 'ArrowDown':
-      playerDrop();
+      player.drop();
       break;
     case 'ArrowUp':
-      playerRotate(1);
+      player.rotate(1);
       break;
     case ' ':
       playerHardDrop();
