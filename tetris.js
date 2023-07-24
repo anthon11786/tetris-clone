@@ -204,8 +204,6 @@ function drawMatrixStoredPiece(matrix, color = null) {
 }
 
 
-
-
 // Saves the current spot of the tetrimino into the gameboard 
 function merge(arena, player) {
   player.matrix.forEach((row, y) => {
@@ -216,8 +214,6 @@ function merge(arena, player) {
     })
   })
 }
-
-
 
 
 // Rotation mechanics 
@@ -241,20 +237,6 @@ function rotate(matrix, dir) {
 }
 
 
-function playerReset() {
-  const pieces = 'TJLOSZI'; 
-  player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
-  player.pos.y = 0; 
-  player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0); 
-  if (collide(arena, player)) { 
-    arena.forEach(row => row.fill(0))
-    player.score = 0; 
-    player.storedPiece = null; 
-    clearCanvas(storeContext, tetrominoStoreCanvas.width/20, tetrominoStoreCanvas.height/20);
-    updateScore(); 
-  }
-}
-
 function playerHardDrop() {
   const shadowPos = { 
     x: player.pos.x, 
@@ -268,7 +250,7 @@ function playerHardDrop() {
   if (collide(arena, player)) {
     player.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
     merge(arena, player); // save the tetrimino where it collided  
-    playerReset();
+    player.reset();
     arenaSweep();
     updateScore(); 
   }
@@ -280,8 +262,9 @@ function playerHardDrop() {
 // #####################################################
 // Main Update function
 
-let dropCounter = 0; 
-let dropInterval = 1000; //every second we want to drop piece 
+// let dropCounter = 0; 
+// let dropInterval = 1000; //every second we want to drop piece 
+// Moved to player.js 
 
 let lastTime = 0; 
 function update(time = 0) {
@@ -297,11 +280,8 @@ function update(time = 0) {
       player.holdingTime -= player.fastMoveInterval;
     }
   }
-
-  dropCounter += deltaTime; 
-  if (dropCounter > dropInterval) {
-    player.drop(); 
-  }
+  
+  player.update(deltaTime);
 
   draw(); 
   requestAnimationFrame(update); // requestAnimationFrame has to have a callback of the same funciton its called in! which is 'update'
@@ -388,7 +368,7 @@ document.addEventListener('keyup', event => {
 
 
 // Start game 
-playerReset(); 
+player.reset(); 
 updateScore(); 
 update();
 

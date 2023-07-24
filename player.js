@@ -8,6 +8,8 @@ class Player {
         this.direction = 0; // will hold -1 for left, 0 for none, 1 for right
         this.holdingTime = 0; // will hold the time in milliseconds a move key has been held down
         this.fastMoveInterval = 150;// after 150ms of holding, we speed up
+        this.dropCounter = 0; // Decontaminate the drop counter from global scope 
+        this.dropInterval = 1000; // every second we want to drop piece 
         
     };
 
@@ -38,16 +40,16 @@ class Player {
     
         // Check for collisions and adjust the player's position to avoid them
         while (collide(arena, this)) {
-        this.pos.x += offset;
-        this.pos.y += offset;
-        offset = -(offset + (offset > 0 ? 1: -1));
+            this.pos.x += offset;
+            this.pos.y += offset;
+            offset = -(offset + (offset > 0 ? 1: -1));
     
-        // If no valid position is found after rotation, undo the rotation
-        if (offset > this.matrix[0].length) {
-            rotate(this.matrix, -dir);
-            this.pos.x = posX;
-            this.pos.y = posY;
-            return;
+            // If no valid position is found after rotation, undo the rotation
+            if (offset > this.matrix[0].length) {
+                rotate(this.matrix, -dir);
+                this.pos.x = posX;
+                this.pos.y = posY;
+                return;
             }
         }
     }
@@ -59,13 +61,34 @@ class Player {
         this.pos.y++;
       
         if (collide(arena, this)) {
-          this.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
-          merge(arena, this); // save the tetrimino where it collided  
-          playerReset();
-          arenaSweep();
-          updateScore(); 
+            this.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
+            merge(arena, this); // save the tetrimino where it collided  
+            playerReset();
+            arenaSweep();
+            updateScore(); 
         }
       
-        dropCounter = 0; // we dont want another drop we want that delay  
+        this.dropCounter = 0; // we dont want another drop we want that delay  
       }
+
+    reset() {
+        const pieces = 'TJLOSZI'; 
+        this.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
+        this.pos.y = 0; 
+        this.pos.x = (arena[0].length / 2 | 0) - (this.matrix[0].length / 2 | 0); 
+        if (collide(arena, this)) { 
+            arena.forEach(row => row.fill(0))
+            this.score = 0; 
+            this.storedPiece = null; 
+            clearCanvas(storeContext, tetrominoStoreCanvas.width/20, tetrominoStoreCanvas.height/20);
+            updateScore(); 
+        }
+    }
+
+    update(deltaTime) {
+        this.dropCounter += deltaTime; 
+        if (this.dropCounter > this.dropInterval) {
+            player.drop(); 
+        }
+    }
 };
