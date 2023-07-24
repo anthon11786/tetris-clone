@@ -29,7 +29,19 @@ class Arena {
         }
     };
 
+    // Cleared when a player makes a whole row. 
     clear() { 
         this.matrix.forEach(row => row.fill(0));
     }
+    
+    // Saves the current spot of the tetrimino into the gameboard 
+    merge(player) {
+        player.matrix.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value !== 0) {
+                this.matrix[y + player.pos.y][x + player.pos.x] = value;
+                }
+            })
+        })
+    };
 }

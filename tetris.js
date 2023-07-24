@@ -175,17 +175,6 @@ function drawMatrixStoredPiece(matrix, color = null) {
 }
 
 
-// Saves the current spot of the tetrimino into the gameboard 
-function merge(matrix, player) {
-  player.matrix.forEach((row, y) => {
-    row.forEach((value, x) => {
-      if (value !== 0) {
-        arena.matrix[y + player.pos.y][x + player.pos.x] = value;
-      }
-    })
-  })
-}
-
 
 
 
@@ -200,7 +189,7 @@ function playerHardDrop() {
   player.pos.y++;
   if (collide(arena, player)) {
     player.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
-    merge(arena.matrix, player); // save the tetrimino where it collided  
+    arena.merge(player); // save the tetrimino where it collided  
     player.reset();
     arena.sweep();
     updateScore(); 

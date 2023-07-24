@@ -80,9 +80,9 @@ class Player {
       
         if (collide(arena, this)) {
             this.pos.y--; // it will collide so we move it right back where it touches and not overlaps. 
-            merge(arena.matrix, this); // save the tetrimino where it collided  
+            arena.merge(this); // save the tetrimino where it collided  
             this.reset();
-            arenaSweep();
+            arena.sweep();
             updateScore(); 
         }
       
