@@ -368,15 +368,7 @@ function updateScore() {
 // #########################################################
 const arena = createMatrix(12, 20);
 
-const player = {
-  pos: {x:0 , y:0 },
-  matrix: null, 
-  score: 0,
-  storedPiece: null, 
-  direction: 0, // will hold -1 for left, 0 for none, 1 for right
-  holdingTime: 0, // will hold the time in milliseconds a move key has been held down
-  fastMoveInterval: 150, // after 150ms of holding, we speed up
-}
+const player = new Player; 
 
 const colors = [ null,
   '#FF0D72',
